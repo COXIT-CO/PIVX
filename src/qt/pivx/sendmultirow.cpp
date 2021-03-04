@@ -136,6 +136,7 @@ bool SendMultiRow::addressChanged(const QString& str, bool fOnlyValidate)
                 Q_EMIT onUriParsed(rcp);
             } else {
                 setCssProperty(ui->lineEditAddress, "edit-primary-multi-book-error");
+                ui->lineEditDescription->clear();
             }
         } else {
             setCssProperty(ui->lineEditAddress, "edit-primary-multi-book");
@@ -149,6 +150,7 @@ bool SendMultiRow::addressChanged(const QString& str, bool fOnlyValidate)
         updateStyle(ui->lineEditAddress);
         return valid;
     }
+    ui->lineEditDescription->clear();
     return false;
 }
 
