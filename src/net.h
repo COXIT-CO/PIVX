@@ -291,6 +291,8 @@ private:
     void ThreadSocketHandler();
     void ThreadDNSAddressSeed();
 
+    void CheckConnectionAvailable();
+
     void WakeMessageHandler();
 
     uint64_t CalculateKeyedNetGroup(const CAddress& ad);

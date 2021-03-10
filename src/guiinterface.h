@@ -88,6 +88,9 @@ public:
     /** Number of network connections changed. */
     boost::signals2::signal<void(int newNumConnections)> NotifyNumConnectionsChanged;
 
+    /** Network connection has been lost. */
+    boost::signals2::signal<void()> NotifyConnectionLost;
+
     /** New, updated or cancelled alert. */
     boost::signals2::signal<void()> NotifyAlertChanged;
 

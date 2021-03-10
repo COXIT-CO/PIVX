@@ -30,6 +30,8 @@
 #include <fcntl.h>
 #endif
 
+#include <cstdio>
+
 #ifdef USE_UPNP
 #include <miniupnpc/miniupnpc.h>
 #include <miniupnpc/upnpcommands.h>
@@ -41,6 +43,9 @@
 
 // Dump addresses to peers.dat and banlist.dat every 15 minutes (900s)
 #define DUMP_ADDRESSES_INTERVAL 900
+
+// Check network connection every 3 minutes (180s)
+#define NETWORK_CONNECTION_CHECK_INTERVAL 180
 
 // We add a random period time (0 to 1 seconds) to feeler connections to prevent synchronization.
 #define FEELER_SLEEP_WINDOW 1
@@ -1724,6 +1729,22 @@ void CConnman::ThreadOpenConnections()
     }
 }
 
+#define DEFAULT_DESTINATION_AVAILABLE_CHECK_COMMAND "/sbin/route -n | grep -c '^0\\.0\\.0\\.0'"
+
+void CConnman::CheckConnectionAvailable()
+{
+    std::FILE *output = popen(DEFAULT_DESTINATION_AVAILABLE_CHECK_COMMAND, "r");
+    if (!output)
+        return;
+
+    unsigned dest_count;
+    std::fscanf(output, "%u", &dest_count);
+    pclose(output);
+
+    if (!dest_count && clientInterface)
+        clientInterface->NotifyConnectionLost();
+}
+
 std::vector<AddedNodeInfo> CConnman::GetAddedNodeInfo()
 {
     std::vector<AddedNodeInfo> ret;
@@ -2143,6 +2164,9 @@ bool CConnman::Start(CScheduler& scheduler, std::string& strNodeError, Options c
 
     // Dump network addresses
     scheduler.scheduleEvery(std::bind(&CConnman::DumpData, this), DUMP_ADDRESSES_INTERVAL * 1000);
+
+    // Check if connection is still available
+    scheduler.scheduleEvery(std::bind(&CConnman::CheckConnectionAvailable, this), NETWORK_CONNECTION_CHECK_INTERVAL * 1000);
 
     return true;
 }

@@ -181,6 +181,11 @@ void ClientModel::updateNumConnections(int numConnections)
     Q_EMIT numConnectionsChanged(numConnections);
 }
 
+void ClientModel::notifyLostConnection()
+{
+    Q_EMIT connectionLost();
+}
+
 void ClientModel::updateAlert()
 {
     Q_EMIT alertsChanged(getStatusBarWarnings());
@@ -295,6 +300,11 @@ static void NotifyNumConnectionsChanged(ClientModel* clientmodel, int newNumConn
         Q_ARG(int, newNumConnections));
 }
 
+static void NotifyConnectionLost(ClientModel* clientmodel)
+{
+    QMetaObject::invokeMethod(clientmodel, "notifyLostConnection", Qt::QueuedConnection);
+}
+
 static void NotifyAlertChanged(ClientModel* clientmodel)
 {
     qDebug() << "NotifyAlertChanged";
@@ -312,6 +322,7 @@ void ClientModel::subscribeToCoreSignals()
     // Connect signals to client
     m_handler_show_progress = interfaces::MakeHandler(uiInterface.ShowProgress.connect(std::bind(ShowProgress, this, std::placeholders::_1, std::placeholders::_2)));
     m_handler_notify_num_connections_changed = interfaces::MakeHandler(uiInterface.NotifyNumConnectionsChanged.connect(std::bind(NotifyNumConnectionsChanged, this, std::placeholders::_1)));
+    m_handler_notify_connection_lost = interfaces::MakeHandler(uiInterface.NotifyConnectionLost.connect(std::bind(NotifyConnectionLost, this)));
     m_handler_notify_alert_changed = interfaces::MakeHandler(uiInterface.NotifyAlertChanged.connect(std::bind(NotifyAlertChanged, this)));
     m_handler_banned_list_changed = interfaces::MakeHandler(uiInterface.BannedListChanged.connect(std::bind(BannedListChanged, this)));
     m_handler_notify_block_tip = interfaces::MakeHandler(uiInterface.NotifyBlockTip.connect(std::bind(BlockTipChanged, this, std::placeholders::_1, std::placeholders::_2)));

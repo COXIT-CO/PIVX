@@ -101,6 +101,7 @@ private:
     // Listeners
     std::unique_ptr<interfaces::Handler> m_handler_show_progress;
     std::unique_ptr<interfaces::Handler> m_handler_notify_num_connections_changed;
+    std::unique_ptr<interfaces::Handler> m_handler_notify_connection_lost;
     std::unique_ptr<interfaces::Handler> m_handler_notify_alert_changed;
     std::unique_ptr<interfaces::Handler> m_handler_banned_list_changed;
     std::unique_ptr<interfaces::Handler> m_handler_notify_block_tip;
@@ -126,6 +127,7 @@ private:
 
 Q_SIGNALS:
     void numConnectionsChanged(int count);
+    void connectionLost();
     void numBlocksChanged(int count);
     void strMasternodesChanged(const QString& strMasternodes);
     void alertsChanged(const QString& warnings);
@@ -141,6 +143,7 @@ public Q_SLOTS:
     void updateTimer();
     void updateMnTimer();
     void updateNumConnections(int numConnections);
+    void notifyLostConnection();
     void updateAlert();
     void updateBanlist();
 };
