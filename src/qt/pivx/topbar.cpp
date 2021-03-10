@@ -421,6 +421,8 @@ void TopBar::loadClientModel()
         setNumConnections(clientModel->getNumConnections());
         connect(clientModel, &ClientModel::numConnectionsChanged, this, &TopBar::setNumConnections);
 
+        connect(clientModel, &ClientModel::connectionLost, this, &TopBar::informConnectionLost);
+
         setNumBlocks(clientModel->getNumBlocks());
         connect(clientModel, &ClientModel::numBlocksChanged, this, &TopBar::setNumBlocks);
 
@@ -466,6 +468,11 @@ void TopBar::setNumConnections(int count)
     }
 
     ui->pushButtonConnection->setButtonText(tr("%n active connection(s)", "", count));
+}
+
+void TopBar::informConnectionLost()
+{
+    inform("Network connection is lost. Please, restart application.");
 }
 
 void TopBar::setNumBlocks(int count)

@@ -47,6 +47,7 @@ public Q_SLOTS:
     void updateDisplayUnit();
 
     void setNumConnections(int count);
+    void informConnectionLost();
     void setNumBlocks(int count);
     void setStakingStatusActive(bool fActive);
     void updateStakingStatus();
