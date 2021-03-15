@@ -291,10 +291,10 @@ struct FakeBlock
     CBlockIndex* pindex;
 };
 
-FakeBlock SimpleFakeMine(CWalletTx& wtx, SaplingMerkleTree& currentTree)
+FakeBlock SimpleFakeMine(CWalletTx& wtx, SaplingMerkleTree& currentTree, CWallet& wallet)
 {
     FakeBlock fakeBlock;
-    fakeBlock.block.nVersion = 8;
+    fakeBlock.block.nVersion = CBlock::CURRENT_VERSION;
     fakeBlock.block.vtx.emplace_back(wtx.tx);
     fakeBlock.block.hashMerkleRoot = BlockMerkleRoot(fakeBlock.block);
     for (const OutputDescription& out : wtx.tx->sapData->vShieldedOutput) {
@@ -306,7 +306,8 @@ FakeBlock SimpleFakeMine(CWalletTx& wtx, SaplingMerkleTree& currentTree)
     fakeBlock.pindex->phashBlock = &mapBlockIndex.find(fakeBlock.block.GetHash())->first;
     chainActive.SetTip(fakeBlock.pindex);
     BOOST_CHECK(chainActive.Contains(fakeBlock.pindex));
-    wtx.SetMerkleBranch(fakeBlock.pindex->GetBlockHash(), 0);
+    WITH_LOCK(wallet.cs_wallet, wallet.SetLastBlockProcessed(fakeBlock.pindex));
+    wtx.m_confirm = CWalletTx::Confirmation(CWalletTx::Status::CONFIRMED, fakeBlock.pindex->nHeight, fakeBlock.pindex->GetBlockHash(), 0);
     return fakeBlock;
 }
 
@@ -347,7 +348,7 @@ BOOST_AUTO_TEST_CASE(GetShieldedAvailableCredit)
 
     // 2) Confirm the tx
     SaplingMerkleTree tree;
-    FakeBlock fakeBlock = SimpleFakeMine(wtxUpdated, tree);
+    FakeBlock fakeBlock = SimpleFakeMine(wtxUpdated, tree, wallet);
     // Simulate receiving a new block and updating the witnesses/nullifiers
     wallet.IncrementNoteWitnesses(fakeBlock.pindex, &fakeBlock.block, tree);
     wallet.GetSaplingScriptPubKeyMan()->UpdateSaplingNullifierNoteMapForBlock(&fakeBlock.block);
