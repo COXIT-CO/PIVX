@@ -9,7 +9,6 @@
 #include "base58.h"
 #include "sapling/key_io_sapling.h"
 #include "wallet/wallet.h"
-#include "zpivchain.h"
 
 #include <algorithm>
 #include <stdint.h>
@@ -563,32 +562,8 @@ void TransactionRecord::loadHotOrColdStakeOrContract(
     ExtractAddress(p2csUtxo.scriptPubKey, false, record.address);
 }
 
-bool IsZPIVType(TransactionRecord::Type type)
+void TransactionRecord::updateStatus(const CWalletTx& wtx, int chainHeight)
 {
-    switch (type) {
-        case TransactionRecord::StakeZPIV:
-        case TransactionRecord::ZerocoinMint:
-        case TransactionRecord::ZerocoinSpend:
-        case TransactionRecord::RecvFromZerocoinSpend:
-        case TransactionRecord::ZerocoinSpend_Change_zPiv:
-        case TransactionRecord::ZerocoinSpend_FromMe:
-            return true;
-        default:
-            return false;
-    }
-}
-
-void TransactionRecord::updateStatus(const CWalletTx& wtx)
-{
-    AssertLockHeld(cs_main);
-    int chainHeight = chainActive.Height();
-
-    CBlockIndex *pindex = nullptr;
-    // Find the block the tx is in
-    BlockMap::iterator mi = mapBlockIndex.find(wtx.hashBlock);
-    if (mi != mapBlockIndex.end())
-        pindex = (*mi).second;
-
     // Determine transaction status
 
     // Update time if needed
@@ -597,8 +572,8 @@ void TransactionRecord::updateStatus(const CWalletTx& wtx)
 
     // Sort order, unrecorded transactions sort to the top
     status.sortKey = strprintf("%010d-%01d-%010u-%03d",
-        (pindex ? pindex->nHeight : std::numeric_limits<int>::max()),
-        (wtx.IsCoinBase() ? 1 : 0),
+        wtx.m_confirm.block_height,
+        ((wtx.IsCoinBase() || wtx.IsCoinStake()) ? 1 : 0),
         time,
         idx);
 
@@ -650,17 +625,12 @@ void TransactionRecord::updateStatus(const CWalletTx& wtx)
             status.status = TransactionStatus::Confirmed;
         }
     }
+    status.needsUpdate = false;
 }
 
-bool TransactionRecord::statusUpdateNeeded()
+bool TransactionRecord::statusUpdateNeeded(int blockHeight) const
 {
-    AssertLockHeld(cs_main);
-    return status.cur_num_blocks != chainActive.Height();
-}
-
-QString TransactionRecord::getTxID() const
-{
-    return QString::fromStdString(hash.ToString());
+    return status.cur_num_blocks != blockHeight || status.needsUpdate;
 }
 
 int TransactionRecord::getOutputIndex() const
